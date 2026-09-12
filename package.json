@@ -1,0 +1,19 @@
+{
+  "name": "svgtoken-owlbear-extension",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:owlbear": "vite --host 0.0.0.0 --port 5197",
+    "build": "vite build && node scripts/write-prod-manifest.js",
+    "preview": "vite preview",
+    "start": "node server.js"
+  },
+  "devDependencies": {
+    "vite": "^8.1.1"
+  },
+  "dependencies": {
+    "@owlbear-rodeo/sdk": "^3.1.0"
+  }
+}

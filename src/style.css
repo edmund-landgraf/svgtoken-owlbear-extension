@@ -1,0 +1,146 @@
+body {
+  background: #202633;
+  color: #f8fafc;
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+}
+
+.token-shell {
+  padding: 16px;
+}
+
+h1 {
+  font-size: 24px;
+  line-height: 1.1;
+  margin: 0 0 8px;
+}
+
+#status,
+#tokenStatus {
+  color: #cbd5e1;
+  line-height: 1.35;
+  margin: 0 0 16px;
+  min-height: 1.35em;
+}
+
+.panel {
+  background: #2f3748;
+  border: 1px solid #566278;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.letter-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.checkbox-field {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.checkbox-field input {
+  accent-color: #f59e0b;
+  display: inline-block;
+  min-height: 0;
+  padding: 0;
+  width: auto;
+}
+
+.field-label,
+.palette legend {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+input,
+select,
+button {
+  box-sizing: border-box;
+  font: inherit;
+}
+
+input,
+select {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #111827;
+  display: block;
+  min-height: 40px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.letter-input {
+  font-size: 28px;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.palette {
+  border: 1px solid #64748b;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(8, 1fr);
+  margin: 0 0 12px;
+  padding: 10px;
+}
+
+.palette legend {
+  padding: 0 4px;
+}
+
+.swatch-label {
+  aspect-ratio: 1;
+  display: block;
+  min-width: 0;
+  position: relative;
+}
+
+.swatch-label input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.swatch {
+  background: var(--swatch-color);
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.38);
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.swatch-label input:checked + .swatch {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px #38bdf8, inset 0 0 0 1px rgba(15, 23, 42, 0.38);
+}
+
+button {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #111827;
+  cursor: pointer;
+  min-height: 40px;
+  padding: 8px 12px;
+  width: 100%;
+}
+
+button:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}

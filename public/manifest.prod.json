@@ -1,0 +1,14 @@
+{
+  "name": "SVG Token Owlbear",
+  "version": "0.0.11",
+  "manifest_version": 1,
+  "author": "Edmund Landgraf",
+  "icon": "https://svgtoken.unwhelm.online/favicon.svg",
+  "action": {
+    "title": "SVG Token Owlbear",
+    "icon": "https://svgtoken.unwhelm.online/action-line.svg",
+    "popover": "https://svgtoken.unwhelm.online/app",
+    "height": 500,
+    "width": 400
+  }
+}

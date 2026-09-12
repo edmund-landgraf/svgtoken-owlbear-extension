@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="SVG Token">
+  <defs>
+    <radialGradient id="coin" cx="34%" cy="25%" r="72%">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="44%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </radialGradient>
+  </defs>
+  <circle cx="24" cy="24" r="21" fill="url(#coin)" stroke="#fff7ed" stroke-width="2.5"/>
+  <circle cx="24" cy="24" r="16.5" fill="none" stroke="#7c2d12" stroke-width="2"/>
+  <g font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" paint-order="stroke fill">
+    <text x="19" y="28" text-anchor="middle" dominant-baseline="middle" font-size="20" fill="#ffffff" stroke="#431407" stroke-width="1.8">S</text>
+    <text x="29.5" y="20.5" text-anchor="middle" dominant-baseline="middle" font-size="10" fill="#ffffff" stroke="#431407" stroke-width="1">V</text>
+    <text x="30" y="29.5" text-anchor="middle" dominant-baseline="middle" font-size="10.5" fill="#ffffff" stroke="#431407" stroke-width="1">G</text>
+  </g>
+</svg>
