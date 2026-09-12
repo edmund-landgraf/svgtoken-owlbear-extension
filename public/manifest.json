@@ -1,6 +1,6 @@
 {
   "name": "SVG Token Owlbear (local)",
-  "version": "0.0.11",
+  "version": "0.0.18",
   "manifest_version": 1,
   "author": "Edmund Landgraf",
   "icon": "/favicon.svg",
@@ -8,7 +8,7 @@
     "title": "SVG Token Owlbear",
     "icon": "/action-line.svg",
     "popover": "/app",
-    "height": 500,
+    "height": 560,
     "width": 400
   }
 }

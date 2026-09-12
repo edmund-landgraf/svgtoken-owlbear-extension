@@ -48,12 +48,34 @@ h1 {
   margin: 0 0 12px;
 }
 
-.checkbox-field input {
+.checkbox-field input,
+.radio-option input {
   accent-color: #f59e0b;
   display: inline-block;
   min-height: 0;
   padding: 0;
   width: auto;
+}
+
+.radio-group {
+  border: 1px solid #64748b;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  margin: 0 0 12px;
+  padding: 10px;
+}
+
+.radio-group legend {
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.radio-option {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  font-weight: 700;
 }
 
 .field-label,

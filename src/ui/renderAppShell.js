@@ -47,6 +47,18 @@ export function renderAppShell() {
           <input id="quantityInput" type="number" min="1" max="100" step="1" value="1" />
         </div>
 
+        <fieldset class="radio-group" aria-labelledby="numberPlacementLegend">
+          <legend id="numberPlacementLegend">Copy number</legend>
+          <label class="radio-option">
+            <input name="numberPlacement" type="radio" value="superscript" checked />
+            <span>Superscript</span>
+          </label>
+          <label class="radio-option">
+            <input name="numberPlacement" type="radio" value="subscript" />
+            <span>Subscript</span>
+          </label>
+        </fieldset>
+
         <label class="checkbox-field" for="addTextLabel">
           <input id="addTextLabel" type="checkbox" />
           <span>Add text label to token?</span>

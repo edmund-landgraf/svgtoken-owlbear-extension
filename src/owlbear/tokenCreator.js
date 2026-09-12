@@ -12,9 +12,13 @@ const TOKEN_SIZE = 512;
 async function tokenPlacementGrid(size) {
   const gridDpi = await OBR.scene.grid.getDpi();
   const step = gridDpi * size.cells;
+  const existing = await OBR.scene.items.getItems(
+    (item) => item.metadata?.[`${NS}/kind`] === "letter-token"
+  );
+  const maxY = existing.reduce((highest, item) => Math.max(highest, item.position?.y ?? 0), 0);
   return {
     startX: step,
-    startY: step,
+    startY: existing.length ? maxY + step : step,
     columns: 8,
     gapX: step,
     gapY: step,
@@ -34,7 +38,7 @@ function hasValue(value) {
   return String(value ?? "").trim().length > 0;
 }
 
-export function validateTokenRequest({ letter, letter2, letter3, quantity, color, fontKey, sizeKey, addTextLabel }) {
+export function validateTokenRequest({ letter, letter2, letter3, quantity, color, fontKey, sizeKey, addTextLabel, numberPlacement }) {
   const normalizedLetter = normalizeLetter(letter);
   if (!normalizedLetter) throw new Error("Choose a first letter from A to Z.");
   if (hasValue(letter2) && !normalizeLetter(letter2)) throw new Error("Letter 2 must be A to Z or blank.");
@@ -50,6 +54,8 @@ export function validateTokenRequest({ letter, letter2, letter3, quantity, color
   const font = tokenFontByKey(fontKey);
   const size = tokenSizeByKey(sizeKey);
 
+  const placementMode = numberPlacement === "subscript" ? "subscript" : "superscript";
+
   return {
     letter: normalizedLetter,
     label,
@@ -58,10 +64,11 @@ export function validateTokenRequest({ letter, letter2, letter3, quantity, color
     font,
     size,
     addTextLabel: Boolean(addTextLabel),
+    numberPlacement: placementMode,
   };
 }
 
-async function buildTokenItem({ label, letter, quantity, color, font, size, addTextLabel, index, placement }) {
+async function buildTokenItem({ label, letter, quantity, color, font, size, addTextLabel, numberPlacement, index, placement }) {
   const copyNumber = index + 1;
   const tokenLabel = quantity > 1 ? `${label}${copyNumber}` : label;
   const name = quantity > 1 ? `${label} ${copyNumber}` : label;
@@ -69,6 +76,7 @@ async function buildTokenItem({ label, letter, quantity, color, font, size, addT
   const svg = letterTokenSvg({
     label,
     copyNumber: quantity > 1 ? copyNumber : undefined,
+    numberPlacement,
     name,
     color,
     fontFamily: font.family,
@@ -100,6 +108,7 @@ async function buildTokenItem({ label, letter, quantity, color, font, size, addT
       [`${NS}/size`]: size.key,
       [`${NS}/sizeCells`]: size.cells,
       [`${NS}/addTextLabel`]: addTextLabel,
+      [`${NS}/numberPlacement`]: numberPlacement,
       [`${NS}/copyIndex`]: copyNumber,
     })
     .build();

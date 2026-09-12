@@ -19,6 +19,7 @@ function currentRequest() {
     fontKey: document.getElementById("fontPicker")?.value,
     sizeKey: document.getElementById("sizePicker")?.value,
     quantity: document.getElementById("quantityInput")?.value,
+    numberPlacement: document.querySelector('input[name="numberPlacement"]:checked')?.value,
     addTextLabel: Boolean(document.getElementById("addTextLabel")?.checked),
     color: selectedColor(),
   };

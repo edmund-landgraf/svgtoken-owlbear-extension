@@ -1,7 +1,7 @@
 # SVG Token Owlbear Extension
 
 A standalone Owlbear Rodeo extension for creating simple alphabet-letter SVG tokens with one required letter, up to two optional extra letters, color, font, quantity, optional Owlbear text label, and Pathfinder-style creature size.
-When quantity is greater than one, generated token art keeps the letter layout and draws the copy number as a subscript (`Ac` with `1`, `2`, `3`); a single token remains unnumbered.
+When quantity is greater than one, generated token art keeps the letter layout and draws the copy number as a superscript or subscript based on the Copy number radio; a single token remains unnumbered.
 
 ## Development
 
