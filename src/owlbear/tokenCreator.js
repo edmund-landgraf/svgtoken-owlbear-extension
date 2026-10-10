@@ -9,17 +9,16 @@ import { letterTokenSvg } from "./tokenSvg.js";
 
 const TOKEN_SIZE = 512;
 
-async function tokenPlacementGrid(size) {
+async function tokenPlacementGrid(size, count) {
   const gridDpi = await OBR.scene.grid.getDpi();
   const step = gridDpi * size.cells;
-  const existing = await OBR.scene.items.getItems(
-    (item) => item.metadata?.[`${NS}/kind`] === "letter-token"
-  );
-  const maxY = existing.reduce((highest, item) => Math.max(highest, item.position?.y ?? 0), 0);
+  const center = await OBR.viewport.getPosition();
+  const columns = Math.min(8, Math.max(1, count));
+  const rows = Math.ceil(Math.max(1, count) / columns);
   return {
-    startX: step,
-    startY: existing.length ? maxY + step : step,
-    columns: 8,
+    startX: center.x - ((columns - 1) * step) / 2,
+    startY: center.y - ((rows - 1) * step) / 2,
+    columns,
     gapX: step,
     gapY: step,
   };
@@ -114,12 +113,88 @@ async function buildTokenItem({ label, letter, quantity, color, font, size, addT
     .build();
 }
 
+function hexColor(value) {
+  return /^#[0-9a-f]{6}$/i.test(String(value ?? "")) ? String(value) : TOKEN_COLORS[0];
+}
+
+function lettersFrom(value) {
+  const letters = String(value ?? "").toUpperCase().replace(/[^A-Z?]/g, "").slice(0, 3);
+  return letters || "?";
+}
+
+export async function createBroadcastTokens(tokens) {
+  if (!Array.isArray(tokens) || tokens.length === 0) {
+    throw new Error("No tokens to create.");
+  }
+
+  await requireOpenScene();
+  const font = tokenFontByKey("cinzel-decorative");
+  const size = tokenSizeByKey("medium");
+  const placement = await tokenPlacementGrid(size, tokens.length);
+  const items = [];
+
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index] ?? {};
+    const label = lettersFrom(token.letters);
+    const copyNumber = Number.isInteger(token.copyNumber) && token.copyNumber > 0 ? token.copyNumber : undefined;
+    const sceneName = String(token.name ?? label).trim().slice(0, 120) || label;
+    const color = hexColor(token.color);
+    const numberPlacement = token.numberPlacement === "subscript" ? "subscript" : "superscript";
+    const dpi = Math.round(TOKEN_SIZE / Math.max(size.cells, 0.5));
+    const svg = letterTokenSvg({
+      label,
+      copyNumber,
+      numberPlacement,
+      name: sceneName,
+      color,
+      fontFamily: font.family,
+      fontCss: font.css,
+      fontWeight: font.weight,
+    });
+    const svgFile = new File([svg], `${safeName(sceneName)}.svg`, { type: "image/svg+xml" });
+    const pngFile = await rasterizeSvgFile(svgFile, `${safeName(sceneName)}.png`, TOKEN_SIZE, TOKEN_SIZE);
+    const info = await sceneImageFromFile(pngFile, {
+      width: TOKEN_SIZE,
+      height: TOKEN_SIZE,
+      dpi,
+      mime: "image/png",
+    });
+    const tokenLabel = copyNumber ? `${label}${copyNumber}` : label;
+
+    items.push(
+      buildImage(info.image, info.grid)
+        .name(sceneName)
+        .description(`SVG Token Owlbear generated ${tokenLabel} token`)
+        .plainText("")
+        .layer("CHARACTER")
+        .position(gridPosition(index, placement))
+        .metadata({
+          [`${NS}/kind`]: "letter-token",
+          [`${NS}/letter`]: label[0],
+          [`${NS}/label`]: label,
+          [`${NS}/tokenLabel`]: tokenLabel,
+          [`${NS}/color`]: color,
+          [`${NS}/fontKey`]: font.key,
+          [`${NS}/size`]: size.key,
+          [`${NS}/sizeCells`]: size.cells,
+          [`${NS}/addTextLabel`]: false,
+          [`${NS}/numberPlacement`]: numberPlacement,
+          [`${NS}/copyIndex`]: copyNumber ?? 1,
+        })
+        .build()
+    );
+  }
+
+  await OBR.scene.items.addItems(items);
+  return items.length;
+}
+
 export async function createLetterTokens(request, onStatus = () => {}) {
   const options = validateTokenRequest(request);
   onStatus("Checking Owlbear scene...");
   await requireOpenScene();
 
-  const placement = await tokenPlacementGrid(options.size);
+  const placement = await tokenPlacementGrid(options.size, options.quantity);
   const items = [];
   for (let index = 0; index < options.quantity; index += 1) {
     onStatus(`Rendering ${options.size.label} ${options.label} ${index + 1} of ${options.quantity}...`);
