@@ -9,10 +9,15 @@ import { letterTokenSvg } from "./tokenSvg.js";
 
 const TOKEN_SIZE = 512;
 
+async function visibleScreenCenter() {
+  const [width, height] = await Promise.all([OBR.viewport.getWidth(), OBR.viewport.getHeight()]);
+  return OBR.viewport.inverseTransformPoint({ x: width / 2, y: height / 2 });
+}
+
 async function tokenPlacementGrid(size, count) {
   const gridDpi = await OBR.scene.grid.getDpi();
   const step = gridDpi * size.cells;
-  const center = await OBR.viewport.getPosition();
+  const center = await visibleScreenCenter();
   const columns = Math.min(8, Math.max(1, count));
   const rows = Math.ceil(Math.max(1, count) / columns);
   return {
@@ -130,7 +135,6 @@ export async function createBroadcastTokens(tokens) {
   await requireOpenScene();
   const font = tokenFontByKey("cinzel-decorative");
   const size = tokenSizeByKey("medium");
-  const placement = await tokenPlacementGrid(size, tokens.length);
   const items = [];
 
   for (let index = 0; index < tokens.length; index += 1) {
@@ -167,7 +171,7 @@ export async function createBroadcastTokens(tokens) {
         .description(`SVG Token Owlbear generated ${tokenLabel} token`)
         .plainText("")
         .layer("CHARACTER")
-        .position(gridPosition(index, placement))
+        .position({ x: 0, y: 0 })
         .metadata({
           [`${NS}/kind`]: "letter-token",
           [`${NS}/letter`]: label[0],
@@ -185,6 +189,10 @@ export async function createBroadcastTokens(tokens) {
     );
   }
 
+  const placement = await tokenPlacementGrid(size, items.length);
+  items.forEach((item, index) => {
+    item.position = gridPosition(index, placement);
+  });
   await OBR.scene.items.addItems(items);
   return items.length;
 }
@@ -194,14 +202,17 @@ export async function createLetterTokens(request, onStatus = () => {}) {
   onStatus("Checking Owlbear scene...");
   await requireOpenScene();
 
-  const placement = await tokenPlacementGrid(options.size, options.quantity);
   const items = [];
   for (let index = 0; index < options.quantity; index += 1) {
     onStatus(`Rendering ${options.size.label} ${options.label} ${index + 1} of ${options.quantity}...`);
-    items.push(await buildTokenItem({ ...options, index, placement }));
+    items.push(await buildTokenItem({ ...options, index, placement: { startX: 0, startY: 0, columns: 1, gapX: 0, gapY: 0 } }));
   }
 
   onStatus(`Adding ${items.length} token${items.length === 1 ? "" : "s"} to the scene...`);
+  const placement = await tokenPlacementGrid(options.size, items.length);
+  items.forEach((item, index) => {
+    item.position = gridPosition(index, placement);
+  });
   await OBR.scene.items.addItems(items);
   return items.length;
 }
