@@ -1,4 +1,4 @@
-import { TOKEN_FONT_URL } from "./tokenFonts.js";
+import { TOKEN_FONT_URLS } from "./tokenFonts.js";
 
 function escapeXml(value) {
   return String(value ?? "")
@@ -17,22 +17,28 @@ function bytesToBase64(bytes) {
   return btoa(binary);
 }
 
-let embeddedFontSrc;
+const embeddedFontSources = new Map();
 
-async function embeddedTokenFontSrc() {
-  if (embeddedFontSrc) return embeddedFontSrc;
-  const response = await fetch(TOKEN_FONT_URL);
-  if (!response.ok) throw new Error(`Unable to load token font: ${response.status}`);
+async function embeddedTokenFontSrc(fontUrl) {
+  if (embeddedFontSources.has(fontUrl)) return embeddedFontSources.get(fontUrl);
+  const response = await fetch(fontUrl);
+  if (!response.ok) throw new Error(`Unable to load token font ${fontUrl}: ${response.status}`);
   const bytes = new Uint8Array(await response.arrayBuffer());
-  embeddedFontSrc = `data:font/ttf;base64,${bytesToBase64(bytes)}`;
-  return embeddedFontSrc;
+  const source = `data:font/ttf;base64,${bytesToBase64(bytes)}`;
+  embeddedFontSources.set(fontUrl, source);
+  return source;
 }
 
 export async function svgFileWithEmbeddedTokenFont(svgFile) {
   const text = await svgFile.text();
-  if (!text.includes(TOKEN_FONT_URL)) return svgFile;
-  const src = await embeddedTokenFontSrc();
-  return new File([text.replaceAll(TOKEN_FONT_URL, src)], svgFile.name, { type: "image/svg+xml" });
+  const fontUrls = TOKEN_FONT_URLS.filter((fontUrl) => text.includes(fontUrl));
+  if (!fontUrls.length) return svgFile;
+
+  let embeddedText = text;
+  for (const fontUrl of fontUrls) {
+    embeddedText = embeddedText.replaceAll(fontUrl, await embeddedTokenFontSrc(fontUrl));
+  }
+  return new File([embeddedText], svgFile.name, { type: "image/svg+xml" });
 }
 
 function parseHex(hex) {
@@ -62,6 +68,12 @@ export function contrastingGlyphColors(hex) {
     : { fill: "#ffffff", stroke: "#1f160f" };
 }
 
+export function glyphColorsForMode(hex, contrastMode = "auto") {
+  if (contrastMode === "dark-on-light") return { fill: "#111827", stroke: "#ffffff" };
+  if (contrastMode === "light-on-dark") return { fill: "#ffffff", stroke: "#1f160f" };
+  return contrastingGlyphColors(hex);
+}
+
 function tokenGlyph({
   glyph,
   x,
@@ -80,55 +92,70 @@ function tokenGlyph({
         paint-order="stroke fill">${escapeXml(glyph)}</text>`;
 }
 
-function clampInsideToken(x, y, radius = 148) {
-  const dx = x - 256;
-  const dy = y - 256;
-  const dist = Math.hypot(dx, dy);
-  if (dist <= radius) return { x, y };
-  const scale = radius / dist;
-  return { x: 256 + dx * scale, y: 256 + dy * scale };
+function copyNumberSlot(letterCount, placement) {
+  // Keep the copy number in a reserved corner instead of nudging it from a
+  // letter anchor. Font metrics vary substantially between Arial, Impact,
+  // Cinzel, and the other selectable fonts, so anchor-relative placement
+  // makes the number collide with 2- and 3-letter labels unpredictably.
+  const slots = {
+    1: {
+      superscript: { x: 388, y: 132 },
+      subscript: { x: 388, y: 380 },
+    },
+    2: {
+      superscript: { x: 402, y: 132 },
+      subscript: { x: 402, y: 384 },
+    },
+    3: {
+      superscript: { x: 408, y: 116 },
+      subscript: { x: 408, y: 398 },
+    },
+  };
+  return slots[Math.min(Math.max(letterCount, 1), 3)][placement === "subscript" ? "subscript" : "superscript"];
 }
 
-function copyNumberGlyph({ copyNumber, anchor, nudgeX = 0.4, nudgeY = -0.38, fontFamily, fontWeight, fill, stroke }) {
-  if (!copyNumber || !anchor) return "";
+function copyNumberGlyph({ copyNumber, letterCount, numberPlacement, fontFamily, fontWeight, fill, stroke }) {
+  if (!copyNumber) return "";
+
   const digits = String(copyNumber);
-  const size = Math.max(54, Math.min(86, (digits.length > 1 ? 0.36 : 0.4) * anchor.size));
-  const rawX = anchor.x + anchor.size * nudgeX;
-  const rawY = anchor.y + anchor.size * nudgeY;
-  const { x, y } = clampInsideToken(rawX, rawY, 152 - size * 0.28);
-  return tokenGlyph({
-    glyph: digits,
-    x,
-    y,
-    size,
-    strokeWidth: 3.2,
-    fontFamily,
-    fontWeight,
-    fill,
-    stroke,
-  });
+  const { x, y } = copyNumberSlot(letterCount, numberPlacement);
+  const twoDigit = digits.length > 1;
+  const width = twoDigit ? 70 : 50;
+  const height = 50;
+  const fontSize = twoDigit ? 34 : 38;
+
+  // The outlined badge is intentionally small and follows the superscript /
+  // subscript slot. It gives 1- and 2-digit values a stable silhouette and a
+  // clear separation from the smaller secondary letters in 2- and 3-letter
+  // tokens. The badge also avoids relying on browser-specific baseline math.
+  return `<rect x="${x - width / 2}" y="${y - height / 2}" width="${width}" height="${height}" rx="18"
+        fill="${escapeXml(stroke)}" fill-opacity="0.82" stroke="${escapeXml(fill)}" stroke-width="4"/>
+    ${tokenGlyph({
+      glyph: digits,
+      x,
+      y,
+      size: fontSize,
+      strokeWidth: 2.4,
+      fontFamily,
+      fontWeight,
+      fill,
+      stroke: "#ffffff",
+    })}`;
 }
 
 function tokenGlyphs({ label, copyNumber, numberPlacement = "superscript", fontFamily, fontWeight, fill, stroke }) {
   const glyphs = Array.from(String(label || "?").slice(0, 3));
   const letterCount = Math.max(glyphs.length, 1);
   const numbered = Boolean(copyNumber);
-  const subscript = numbered && numberPlacement === "subscript";
-  const shiftX = numbered ? { 1: -18, 2: -20, 3: -16 }[letterCount] : 0;
-  const shiftY = numbered ? (subscript ? -6 : 10) : 0;
   const style = { fontFamily, fontWeight, fill, stroke };
 
   let letters;
-  let superAnchor;
-  let subAnchor;
   if (glyphs.length <= 1) {
     const main = {
-      x: 256 + shiftX,
-      y: 278 + shiftY,
+      x: 256,
+      y: 278,
       size: numbered ? 276 : 300,
     };
-    superAnchor = main;
-    subAnchor = main;
     letters = tokenGlyph({
       glyph: glyphs[0] || "?",
       ...main,
@@ -136,20 +163,16 @@ function tokenGlyphs({ label, copyNumber, numberPlacement = "superscript", fontF
       ...style,
     });
   } else if (glyphs.length === 2) {
-    const first = { x: 214 + shiftX, y: 280 + shiftY, size: 268 };
-    const second = { x: 318 + shiftX, y: 286 + shiftY, size: 160 };
-    superAnchor = second;
-    subAnchor = second;
+    const first = { x: 214, y: 280, size: 268 };
+    const second = { x: 318, y: 286, size: 160 };
     letters = [
       tokenGlyph({ glyph: glyphs[0], ...first, strokeWidth: 10, ...style }),
       tokenGlyph({ glyph: glyphs[1], ...second, strokeWidth: 8, ...style }),
     ].join("\n  ");
   } else {
-    const first = { x: 200 + shiftX, y: 286 + shiftY, size: 236 };
-    const second = { x: 312 + shiftX, y: 232 + shiftY, size: 112 };
-    const third = { x: 314 + shiftX, y: 324 + shiftY, size: 118 };
-    superAnchor = second;
-    subAnchor = third;
+    const first = { x: 200, y: 286, size: 236 };
+    const second = { x: 312, y: 232, size: 112 };
+    const third = { x: 314, y: 324, size: 118 };
     letters = [
       tokenGlyph({ glyph: glyphs[0], ...first, strokeWidth: 10, ...style }),
       tokenGlyph({ glyph: glyphs[1], ...second, strokeWidth: 7, ...style }),
@@ -159,29 +182,8 @@ function tokenGlyphs({ label, copyNumber, numberPlacement = "superscript", fontF
 
   const mark = copyNumberGlyph({
     copyNumber,
-    anchor: subscript ? subAnchor : superAnchor,
-    nudgeX: subscript
-      ? glyphs.length >= 3
-        ? 0.12
-        : glyphs.length === 2
-          ? 0.2
-          : 0.28
-      : glyphs.length >= 3
-        ? 0.46
-        : glyphs.length === 2
-          ? 0.38
-          : 0.42,
-    nudgeY: subscript
-      ? glyphs.length >= 3
-        ? 0.42
-        : glyphs.length === 2
-          ? 0.28
-          : 0.32
-      : glyphs.length >= 3
-        ? -0.52
-        : glyphs.length === 2
-          ? -0.44
-          : -0.4,
+    letterCount,
+    numberPlacement,
     fontFamily,
     fontWeight,
     fill,
@@ -194,6 +196,7 @@ export function letterTokenSvg({
   label,
   copyNumber,
   numberPlacement = "superscript",
+  contrastMode = "auto",
   name,
   color = "#7c3aed",
   fontFamily,
@@ -207,7 +210,7 @@ export function letterTokenSvg({
   const title = escapeXml(name || `${rawGlyph} Token`);
   const fill = escapeXml(color);
   const glyphColors = {
-    ...contrastingGlyphColors(color),
+    ...glyphColorsForMode(color, contrastMode),
     ...(textFill ? { fill: textFill } : {}),
     ...(textStroke ? { stroke: textStroke } : {}),
   };

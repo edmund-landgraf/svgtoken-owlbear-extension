@@ -20,6 +20,7 @@ function currentRequest() {
     sizeKey: document.getElementById("sizePicker")?.value,
     quantity: document.getElementById("quantityInput")?.value,
     numberPlacement: document.querySelector('input[name="numberPlacement"]:checked')?.value,
+    contrastMode: document.querySelector('input[name="contrastMode"]:checked')?.value,
     addTextLabel: Boolean(document.getElementById("addTextLabel")?.checked),
     color: selectedColor(),
   };

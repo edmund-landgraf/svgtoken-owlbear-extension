@@ -59,6 +59,22 @@ export function renderAppShell() {
           </label>
         </fieldset>
 
+        <fieldset class="radio-group contrast-group" aria-labelledby="contrastModeLegend">
+          <legend id="contrastModeLegend">Letter contrast</legend>
+          <label class="contrast-option">
+            <input name="contrastMode" type="radio" value="auto" checked />
+            <span>Auto</span>
+          </label>
+          <label class="contrast-option">
+            <input name="contrastMode" type="radio" value="dark-on-light" />
+            <span>Dark on light</span>
+          </label>
+          <label class="contrast-option">
+            <input name="contrastMode" type="radio" value="light-on-dark" />
+            <span>Light on dark</span>
+          </label>
+        </fieldset>
+
         <label class="checkbox-field" for="addTextLabel">
           <input id="addTextLabel" type="checkbox" />
           <span>Add text label to token?</span>

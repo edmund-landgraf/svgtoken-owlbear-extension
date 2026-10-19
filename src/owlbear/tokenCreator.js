@@ -42,7 +42,7 @@ function hasValue(value) {
   return String(value ?? "").trim().length > 0;
 }
 
-export function validateTokenRequest({ letter, letter2, letter3, quantity, color, fontKey, sizeKey, addTextLabel, numberPlacement }) {
+export function validateTokenRequest({ letter, letter2, letter3, quantity, color, fontKey, sizeKey, addTextLabel, numberPlacement, contrastMode }) {
   const normalizedLetter = normalizeLetter(letter);
   if (!normalizedLetter) throw new Error("Choose a first letter from A to Z.");
   if (hasValue(letter2) && !normalizeLetter(letter2)) throw new Error("Letter 2 must be A to Z or blank.");
@@ -59,6 +59,7 @@ export function validateTokenRequest({ letter, letter2, letter3, quantity, color
   const size = tokenSizeByKey(sizeKey);
 
   const placementMode = numberPlacement === "subscript" ? "subscript" : "superscript";
+  const contrastModeValue = ["dark-on-light", "light-on-dark"].includes(contrastMode) ? contrastMode : "auto";
 
   return {
     letter: normalizedLetter,
@@ -69,10 +70,11 @@ export function validateTokenRequest({ letter, letter2, letter3, quantity, color
     size,
     addTextLabel: Boolean(addTextLabel),
     numberPlacement: placementMode,
+    contrastMode: contrastModeValue,
   };
 }
 
-async function buildTokenItem({ label, letter, quantity, color, font, size, addTextLabel, numberPlacement, index, placement }) {
+async function buildTokenItem({ label, letter, quantity, color, font, size, addTextLabel, numberPlacement, contrastMode, index, placement }) {
   const copyNumber = index + 1;
   const tokenLabel = quantity > 1 ? `${label}${copyNumber}` : label;
   const name = quantity > 1 ? `${label} ${copyNumber}` : label;
@@ -81,6 +83,7 @@ async function buildTokenItem({ label, letter, quantity, color, font, size, addT
     label,
     copyNumber: quantity > 1 ? copyNumber : undefined,
     numberPlacement,
+    contrastMode,
     name,
     color,
     fontFamily: font.family,
@@ -113,6 +116,7 @@ async function buildTokenItem({ label, letter, quantity, color, font, size, addT
       [`${NS}/sizeCells`]: size.cells,
       [`${NS}/addTextLabel`]: addTextLabel,
       [`${NS}/numberPlacement`]: numberPlacement,
+      [`${NS}/contrastMode`]: contrastMode,
       [`${NS}/copyIndex`]: copyNumber,
     })
     .build();
@@ -144,11 +148,13 @@ export async function createBroadcastTokens(tokens) {
     const sceneName = String(token.name ?? label).trim().slice(0, 120) || label;
     const color = hexColor(token.color);
     const numberPlacement = token.numberPlacement === "subscript" ? "subscript" : "superscript";
+    const contrastMode = ["dark-on-light", "light-on-dark"].includes(token.contrastMode) ? token.contrastMode : "auto";
     const dpi = Math.round(TOKEN_SIZE / Math.max(size.cells, 0.5));
     const svg = letterTokenSvg({
       label,
       copyNumber,
       numberPlacement,
+      contrastMode,
       name: sceneName,
       color,
       fontFamily: font.family,
@@ -183,6 +189,7 @@ export async function createBroadcastTokens(tokens) {
           [`${NS}/sizeCells`]: size.cells,
           [`${NS}/addTextLabel`]: false,
           [`${NS}/numberPlacement`]: numberPlacement,
+          [`${NS}/contrastMode`]: contrastMode,
           [`${NS}/copyIndex`]: copyNumber ?? 1,
         })
         .build()

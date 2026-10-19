@@ -78,6 +78,47 @@ h1 {
   font-weight: 700;
 }
 
+.contrast-group {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.contrast-option {
+  min-width: 0;
+  position: relative;
+}
+
+.contrast-option input {
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.contrast-option span {
+  background: #202633;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  color: #f8fafc;
+  cursor: pointer;
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 6px;
+  text-align: center;
+}
+
+.contrast-option input:checked + span {
+  background: #f59e0b;
+  border-color: #fcd34d;
+  color: #111827;
+}
+
+.contrast-option input:focus-visible + span {
+  outline: 3px solid #38bdf8;
+  outline-offset: 2px;
+}
+
 .field-label,
 .palette legend {
   display: block;
